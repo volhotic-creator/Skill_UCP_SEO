@@ -2,6 +2,8 @@
 
 Fuente: https://developers.google.com/merchant/ucp
 
+---
+
 ## ¿Qué es UCP?
 
 El Universal Commerce Protocol (UCP) es el estándar abierto de Google que permite compras directas e instantáneas desde AI Mode en Google Search y Gemini. Para que un producto sea elegible para estas superficies, sus datos de feed (incluyendo el título) deben cumplir criterios específicos.
