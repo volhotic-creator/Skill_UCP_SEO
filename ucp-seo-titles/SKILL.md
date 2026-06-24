@@ -1,290 +1,291 @@
 ---
-name: ucp-seo-titles
+name: ml-autopartes-titles
 description: |
-  Genera, audita y corrige títulos SEO de productos para Mercado Libre y Google (UCP / Merchant Center / AI Mode / Gemini). Activar cuando el equipo necesite generar títulos nuevos, auditar títulos existentes, corregir rechazos del feed, o validar catálogos en lote para cualquiera de estas plataformas. También activar cuando se mencione: "títulos de producto", "Mercado Libre", "Meli", "ML", "feed de Merchant Center", "AI Mode", "Google Shopping", "UCP", "títulos SEO ecommerce", o cuando pidan revisar, mejorar o generar títulos.
+  Genera, audita y corrige títulos SEO y datos de Compatibilidades para publicaciones de Autopartes / Repuestos para Autos y Camionetas en Mercado Libre Argentina y LATAM. Produce el título optimizado (≤60 chars) más la estructura de Compatibilidades lista para el feed. Activar cuando el equipo necesite generar títulos, auditar publicaciones existentes, corregir rechazos, o procesar catálogos en lote. También activar cuando se mencione: "repuesto", "autoparte", "filtro", "freno", "amortiguador", "faro", "espejo", "correa", "compatibilidad vehículo", o cualquier pieza de auto o camioneta para ML.
 ---
 
-# Skill: SEO Titles — Mercado Libre & Google UCP
+# Skill: Títulos SEO para Autopartes — Mercado Libre Argentina
 
-Genera, audita y corrige títulos de productos cumpliendo los criterios específicos de cada plataforma.
-
-**Plataformas soportadas:**
-- **Mercado Libre** — Argentina, México, Brasil, Colombia, Chile y otros países de LATAM
-- **Google UCP** — Merchant Center, AI Mode (Google Search), Gemini
+Genera títulos optimizados y datos de Compatibilidades para publicaciones del rubro **Repuestos para Autos y Camionetas** en Mercado Libre.
 
 ---
 
-## Plataformas y referencias
+## Principio fundamental
 
-| Plataforma | Criterio de referencia |
-|------------|----------------------|
-| Mercado Libre | `/references/mercadolibre-criteria.md` |
-| Google UCP | `/references/ucp-criteria.md` |
+> **El título describe el repuesto. El vehículo va en el sistema de Compatibilidades de ML.**
+
+La información del vehículo compatible (marca, modelo, año) se carga via el sistema estructurado de Compatibilidades de ML — no en el título. Este es el estándar oficial de ML para autopartes y genera +61% de conversión en Argentina vs. incluir el vehículo en el título.
+
+| Dato | Dónde va |
+|------|----------|
+| Tipo de repuesto | Título — primera posición |
+| Posición (delantera/trasera) | Título + atributo `POSITION` del ítem |
+| Marca del repuesto | Título |
+| Spec diferenciadora | Título (si entra en el límite) |
+| Marca del vehículo | Sistema de Compatibilidades ML |
+| Modelo del vehículo | Sistema de Compatibilidades ML |
+| Año(s) del vehículo | Sistema de Compatibilidades ML |
+| Motor / versión | Sistema de Compatibilidades ML |
+| Número OEM / de parte | Descripción + ficha técnica del ítem |
+| Condición (nuevo/usado) | Campo `condition` del ítem ML |
 
 ---
 
-## Cómo indicar la plataforma
+## Referencias
 
-El usuario debe especificar la plataforma objetivo. Si no lo hace, preguntar antes de proceder:
+- Criterios generales ML: `/references/mercadolibre-criteria.md`
+- Estructuras por subcategoría y guía técnica de Compatibilidades: `/references/autopartes-structures.md`
+
+---
+
+## Schema de entrada — Pipeline de datos
+
+El skill acepta este schema como input. Puede llegar en JSON, YAML, tabla o texto libre.
 
 ```
-¿Para qué plataforma es este título?
-  (A) Mercado Libre
-  (B) Google UCP / Merchant Center
-  (C) Ambas (optimización dual)
+REPUESTO
+  tipo_repuesto:    [obligatorio]   Pastilla Freno / Filtro Aceite / Amortiguador / etc.
+  posicion:         [condicional]   Delantera · Trasera · Izquierda · Derecha
+                                    Delantera Izquierda · Delantera Derecha
+                                    Trasera Izquierda · Trasera Derecha · N/A
+  marca_repuesto:   [si aplica]     Brembo · Gates · Monroe · Bosch · Mahle · etc.
+  spec_clave:       [si aplica]     Tamaño · capacidad · tipo de kit · amperaje
+
+COMPATIBILIDADES  (mínimo 1 registro — obligatorio en categorías ML autopartes)
+  - marca_vehiculo: [obligatorio]   Ford · Toyota · Volkswagen · Renault · Peugeot · etc.
+    modelo:         [obligatorio]   Ranger · Hilux · Amarok · Kangoo · 206 · etc.
+    año_desde:      [obligatorio]   ej: 2012
+    año_hasta:      [obligatorio]   ej: 2022  (año actual si el modelo sigue vigente)
+    motor:          [si aplica]     ej: 2.2 TDi · 2.8 D4D · 1.4 16v
+    version:        [si aplica]     ej: XLT · Limited · Trendline
 ```
 
-Si el contexto es claro ("ML", "MercadoLibre", "listado en Meli", "feed de Google", etc.), asumir sin preguntar.
+---
+
+## Fórmula del título
+
+```
+[Tipo de repuesto]  [Marca repuesto?]  [Posición?]  [Spec clave?]
+```
+
+**Reglas de construcción:**
+
+1. El tipo de repuesto va **primero** — las primeras palabras tienen mayor peso en el ranking de ML
+2. La posición va **después** de la marca del repuesto (o después del tipo si no hay marca)
+3. Omitir posición si no aplica al tipo (filtros, correas, juntas de culata)
+4. Omitir marca del repuesto si el ítem es genérico o sin marca
+5. Límite estricto: **60 caracteres** (límite de categoría en ML Argentina autopartes)
+6. Sin vehículo en el título — va en Compatibilidades
+7. Sin número OEM — va en ficha técnica
+
+**Tabla de fórmulas por subcategoría:**
+
+| Subcategoría | Fórmula | Ejemplo (con marca) | Ejemplo (sin marca) |
+|---|---|---|---|
+| Pastillas de freno | Tipo + Marca + Posición | Pastilla Freno Brembo Delantera | Pastilla Freno Delantera |
+| Discos de freno | Tipo + Posición + Marca | Disco Freno Delantero Brembo | Disco Freno Delantero |
+| Zapatas / tambores | Tipo + Posición + Marca | Zapata Freno Trasera EBC | Zapata Freno Trasera |
+| Amortiguadores | Tipo + Posición + Marca | Amortiguador Delantero Monroe | Amortiguador Delantero |
+| Resortes | Tipo + Posición + Marca | Resorte Delantero Monroe | Resorte Delantero Suspensión |
+| Bujes de suspensión | Tipo + Posición + Marca | Buje Suspensión Delantera Axl | Buje Suspensión Delantera |
+| Rótulas | Tipo + Posición + Marca | Rótula Dirección Delantera TRW | Rótula Dirección Delantera |
+| Filtro de aceite | Tipo + Marca | Filtro Aceite Mahle | Filtro Aceite |
+| Filtro de aire | Tipo + Marca | Filtro Aire Bosch | Filtro Aire |
+| Filtro habitáculo | Tipo + Marca | Filtro Habitáculo Cabina Bosch | Filtro Habitáculo Cabina |
+| Filtro combustible | Tipo + Variante + Marca | Filtro Combustible Gasoil Mann | Filtro Combustible |
+| Correa distribución | Tipo + Marca + Kit? | Correa Distribución Gates | Kit Distribución Gates |
+| Cadena distribución | Tipo + Marca | Cadena Distribución Iwis | Kit Cadena Distribución |
+| Junta de culata | Tipo + Marca | Junta Culata Corteco | Junta Culata |
+| Alternador | Tipo + Marca + Amperaje? | Alternador Bosch 90A | Alternador 90A |
+| Arrancador | Tipo + Marca | Arranque Motor Bosch | Arranque Motor |
+| Sensor | Tipo específico + Marca | Sensor MAP Bosch | Sensor Posición Cigüeñal |
+| Bobina encendido | Tipo + Marca | Bobina Encendido Bosch | Bobina Encendido |
+| Radiador de agua | Tipo + Marca | Radiador Agua Valeo | Radiador Agua Motor |
+| Bomba de agua | Tipo + Marca | Bomba Agua Hepu | Bomba Agua Motor |
+| Termostato | Tipo + Marca | Termostato Motor Wahler | Termostato Motor |
+| Faro delantero | Tipo + Posición + Marca | Faro Delantero Izquierdo TYC | Faro Delantero Izquierdo |
+| Faro trasero | Tipo + Posición + Marca | Faro Trasero Derecho LAM | Faro Trasero Derecho |
+| Espejo retrovisor | Tipo + Posición + Color? | Espejo Retrovisor Izquierdo Negro | Espejo Retrovisor Izquierdo |
+| Paragolpe | Tipo + Posición | Paragolpe Delantero | Paragolpe Trasero |
+| Guardabarros | Tipo + Posición | Guardabarros Delantero Izquierdo | Guardabarros Trasero Derecho |
+| Kit de embrague | Tipo + Marca | Kit Embrague Valeo | Kit Embrague Completo |
+| Disco de embrague | Tipo + Marca | Disco Embrague Sachs | Disco Embrague |
+| Junta homocinética | Tipo + Posición + Int/Ext | Junta Homocinética Delantera Externa | — |
 
 ---
 
 ## Modos de operación
 
-### MODO GENERAR — Título nuevo
+### MODO GENERAR — Título nuevo desde datos estructurados
 
-**Paso 1 — Recopilar datos**
+1. Recibir datos según el schema de entrada
+2. Identificar subcategoría del repuesto
+3. Aplicar fórmula correspondiente de la tabla
+4. Validar contra checklist de 13 puntos
+5. Presentar output completo
 
-Extraer del input o preguntar si falta información crítica:
-
-| Dato | ML | UCP |
-|------|----|-----|
-| Marca | Obligatorio | Obligatorio |
-| Tipo de producto | Obligatorio | Obligatorio |
-| Modelo / referencia | Obligatorio si existe | Recomendado |
-| Color | Solo si no hay variantes | Siempre incluir |
-| Talla / capacidad / peso | Si aplica | Si aplica |
-| Género | Si aplica | Si aplica |
-| Material | Si aplica | Si aplica |
-| Categoría (para ML) | Para verificar límite de chars | — |
-| País / idioma objetivo | Para Global Selling | Para target del feed |
-
-**Paso 2 — Construir el título**
-
-Usar la estructura de la sección "Estructuras por categoría" según la plataforma.
-
-**Paso 3 — Validar**
-
-Correr el checklist de la plataforma indicada. Para dual: correr ambos checklists.
-
-**Paso 4 — Presentar resultado**
-
+**Output:**
 ```
-Plataforma:        [ML / UCP / Dual]
-Título generado:   [título]
-Longitud:          X caracteres  [✅ dentro del límite / ⚠️ revisar]
-Score:             X/N criterios cumplidos
-Issues:            [ninguno / lista de problemas]
-Listo para publicar: Sí / No — [razón si No]
+Título:              [título generado]
+Longitud:            XX/60 caracteres  ✅ / ⚠️ supera límite
+Score:               XX/13
+Issues:              ninguno  /  [lista de problemas]
+Apto para publicar:  Sí  /  No — [razón]
+
+Compatibilidades (para sistema ML):
+┌──────────────────┬───────────────┬────────────────┬─────────────┐
+│ Marca vehículo   │ Modelo        │ Año            │ Motor       │
+├──────────────────┼───────────────┼────────────────┼─────────────┤
+│ Ford             │ Ranger        │ 2012–2022      │ 3.2 TDi     │
+│ Volkswagen       │ Amarok        │ 2010–2023      │ 2.0 TDi     │
+└──────────────────┴───────────────┴────────────────┴─────────────┘
 ```
 
 ---
 
 ### MODO AUDITAR — Título existente
 
-**Paso 1** — Recibir el título
-**Paso 2** — Correr checklist completo de la plataforma indicada
-**Paso 3** — Identificar cada problema con el criterio que viola
-**Paso 4** — Proponer versión corregida
-**Paso 5** — Explicar cada cambio realizado
+1. Recibir título existente (+ datos de compatibilidad si están disponibles)
+2. Correr checklist completo de 13 puntos
+3. Identificar cada problema con su criterio y severidad
+4. Generar título corregido
+5. Listar cambios aplicados
 
+**Output:**
 ```
-Original:          [título original]
-Plataforma:        [ML / UCP]
-Score:             X/N
-Problemas encontrados:
-  - [descripción del problema] → criterio #N: [nombre]
-Título corregido:  [nuevo título]
-Longitud:          X caracteres
-Cambios aplicados:
+Original:       [título original]
+Score:          XX/13
+Problemas:
+  - [descripción] → criterio #N  [CRÍTICO / RECHAZO / SUSPENSIÓN]
+Corregido:      [nuevo título]
+Longitud:       XX/60 caracteres
+Cambios:
   - [cambio 1]
   - [cambio 2]
 ```
 
 ---
 
-### MODO LOTE — Múltiples títulos
+### MODO LOTE — Múltiples ítems
 
-Si recibe una lista, tabla o CSV:
+Si recibe tabla, CSV, JSON array o lista de ítems:
 
-1. Procesar cada título en modo AUDITAR
-2. Al finalizar, presentar resumen ejecutivo:
+1. Procesar cada ítem en GENERAR o AUDITAR según corresponda
+2. Al finalizar, presentar resumen ejecutivo + tabla exportable
 
+**Resumen ejecutivo:**
 ```
-Resumen del lote — Plataforma: [ML / UCP / Dual]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total procesados:        XX
-✅ Aptos sin cambios:    XX  (score perfecto)
-⚠️ Con issues menores:   XX  (1–2 problemas)
-❌ Requieren corrección:  XX  (3+ problemas)
+Resumen del lote — ML Autopartes Argentina
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total procesados:          XX
+✅ Aptos sin cambios:       XX
+⚠️ Con issues menores:      XX  (1–2 problemas, mejorable)
+❌ Requieren corrección:     XX  (3+ problemas, no publicar)
 
 Issues más frecuentes:
-  1. [issue] — XX títulos
-  2. [issue] — XX títulos
-  3. [issue] — XX títulos
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. [issue] — XX ítems
+  2. [issue] — XX ítems
+  3. [issue] — XX ítems
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-3. Ofrecer tabla markdown con todos los títulos originales y corregidos
+**Tabla exportable (markdown):**
+
+| # | Título original | Título corregido | Chars | Score | Issues |
+|---|----------------|-----------------|-------|-------|--------|
+| 1 | ... | ... | 0/60 | 0/13 | ... |
 
 ---
 
-## Checklists de validación
+## Checklist de validación ML Autopartes — 13 puntos
 
-### Checklist Mercado Libre — 10 puntos
-
-Los ítems marcados RECHAZO o SUSPENSIÓN son **bloqueantes**.
+Correr en orden. Los niveles de severidad son:
+- **CRÍTICO** — bloquea la calidad del listado, impacta visibilidad
+- **IMPORTANTE** — reduce conversión o posicionamiento
+- **RECHAZO** — ML puede rechazar la publicación
+- **SUSPENSIÓN** — riesgo de suspensión de cuenta
 
 ```
-[1]  ¿Tiene marca identificable?                               CRÍTICO
-[2]  ¿Tiene tipo de producto claro?                            CRÍTICO
-[3]  ¿Tiene modelo o referencia (si aplica a la categoría)?    IMPORTANTE
-[4]  ¿Longitud dentro del límite de la categoría?              CRÍTICO
-[5]  ¿Sin mayúsculas innecesarias (ALL CAPS)?                  RECHAZO
-[6]  ¿Sin símbolos ni puntuación innecesaria?                  RECHAZO
-[7]  ¿Sin precio ni condiciones de pago ("12 cuotas")?         RECHAZO
-[8]  ¿Sin info de envío ni texto promocional?                  RECHAZO
-[9]  ¿Sin comparaciones de marca
-       ("similar a", "tipo", "estilo", "igual a")?             SUSPENSIÓN
-[10] ¿Sin indicar condición (nuevo/usado/reacondicionado)?     RECHAZO
+[1]  ¿El tipo de repuesto es la primera palabra(s) del título?        CRÍTICO
+[2]  ¿Tiene posición cuando corresponde al tipo de repuesto?          CRÍTICO
+[3]  ¿Longitud ≤ 60 caracteres?                                       CRÍTICO
+[4]  ¿Las Compatibilidades (vehículo) están definidas?                CRÍTICO
+[5]  ¿Sin información de vehículo en el título
+       (marca/modelo/año de auto o camioneta)?                        IMPORTANTE
+[6]  ¿Tiene marca del repuesto si el ítem tiene marca conocida?       IMPORTANTE
+[7]  ¿Sin número OEM ni de parte en el título?                        IMPORTANTE
+[8]  ¿Sin mayúsculas innecesarias (ALL CAPS)?                         RECHAZO
+[9]  ¿Sin símbolos ni puntuación decorativa (★ · >>> · --- · !!!)?   RECHAZO
+[10] ¿Sin precio ni condiciones de pago ("12 cuotas", "$5.000")?      RECHAZO
+[11] ¿Sin condición del producto ("nuevo", "usado", "original")?      RECHAZO
+[12] ¿Sin texto promocional ni info de envío?                         RECHAZO
+[13] ¿Sin comparaciones de marca
+       ("similar a", "tipo", "estilo", "igual a" + nombre de marca)? SUSPENSIÓN
 ```
 
-**Scoring ML:**
-- 10/10 → ✅ Apto para publicar
-- 8–9/10 → ⚠️ Mejorable, menor visibilidad posible
-- <8/10 → ❌ No apto — corregir antes de publicar
+**Scoring:**
+- 13/13 → ✅ Apto para publicar
+- 11–12/13 → ⚠️ Mejorable — revisar antes del feed
+- ≤10/13 → ❌ No publicar — corregir primero
 
 ---
 
-### Checklist Google UCP — 9 puntos
+## Notas técnicas — Integración pipeline
 
-```
-[1]  ¿Tiene marca identificable?                               CRÍTICO
-[2]  ¿Tiene tipo de producto claro?                            CRÍTICO
-[3]  ¿Tiene atributo diferenciador (color/talla/modelo)?       IMPORTANTE
-[4]  ¿Longitud entre 25 y 150 caracteres?                      CRÍTICO
-[5]  ¿Sin mayúsculas innecesarias (ALL CAPS)?                  RECHAZO
-[6]  ¿Sin símbolos especiales (★ ✓ !!! €€€)?                 RECHAZO
-[7]  ¿Sin precio ni información de envío?                      RECHAZO
-[8]  ¿Sin texto promocional ("30% OFF", "Oferta limitada")?    RECHAZO
-[9]  ¿Un agente IA puede identificar el ítem exacto
-       solo con este título, sin ver la imagen?                CRÍTICO
-```
-
-**Scoring UCP:**
-- 9/9 → ✅ Apto para UCP / AI Mode / Gemini
-- 7–8/9 → ⚠️ Mejorable, baja visibilidad posible en Gemini
-- <7/9 → ❌ No apto — corregir antes del feed
-
----
-
-## Estructuras por categoría
-
-### Mercado Libre
-
-| Categoría | Estructura recomendada |
-|-----------|----------------------|
-| Electrónica / Tecnología | Marca + Modelo + Tipo de producto + Specs clave |
-| Smartphones | Marca + Modelo + Almacenamiento + RAM + Color |
-| Ropa | Marca + Tipo + Género + Color + Talla/Material |
-| Calzado | Marca + Modelo + Tipo + Género + Talla |
-| Alimentos | Marca + Nombre + Variante/Sabor + Peso/Cantidad |
-| Hogar | Marca + Material + Tipo + Medidas |
-| Autopartes | Marca + Tipo + Compatibilidad (marca/modelo auto + año) |
-| Genérico | Marca + Modelo + Tipo + Atributos diferenciadores |
-
-> **Regla ML sobre color y variantes**: Si el producto existe en múltiples colores, **no incluir el color en el título** — usar el sistema de variaciones de ML. Incluir color solo cuando el producto es de un único color.
-
-### Google UCP
-
-| Categoría | Estructura recomendada |
-|-----------|----------------------|
-| Ropa | Marca + Género + Tipo de producto + Color + Talla/Material |
-| Electrónica | Marca + Modelo + Tipo de producto + Especificaciones clave |
-| Alimentos | Marca + Nombre del producto + Sabor/variante + Peso |
-| Hogar | Marca + Material + Tipo de producto + Dimensiones |
-| Calzado | Marca + Modelo + Tipo + Género + Color + Talla |
-| Genérico | Marca + Tipo de producto + Atributos diferenciadores |
-
-> **Regla UCP sobre atributos**: Incluir siempre el atributo diferenciador porque el agente IA necesita identificar el ítem específico para completar el checkout agéntico sin intervención humana.
-
----
-
-## Comparativa rápida ML vs Google UCP
-
-| Criterio | Mercado Libre | Google UCP |
-|----------|:------------:|:---------:|
-| Estructura base | Marca + Modelo + Producto + Specs | Marca + Producto + Atributos |
-| Longitud mínima | Sin mínimo global definido | 25 caracteres |
-| Longitud máxima | Por categoría (consultar API) | 150 caracteres |
-| Longitud óptima | Llegar al límite de la categoría | 70–150 caracteres |
-| Color en título | Solo si producto es de un color | Siempre |
-| Condición (nuevo/usado) | ❌ Nunca en el título | No aplica |
-| Texto promocional | ❌ Prohibido | ❌ Prohibido |
-| Info de envío | ❌ Prohibido | ❌ Prohibido |
-| MAYÚSCULAS | ❌ Prohibido | ❌ Prohibido |
-| Símbolos especiales | ❌ Prohibido | ❌ Prohibido |
-| Comparaciones de marca | ❌ Riesgo de suspensión | ❌ Prohibido |
-| Idioma | Local / inglés (Global Selling) | Idioma del target del feed |
-
----
-
-## Notas técnicas
-
-### Mercado Libre
-
-- **Límite de caracteres por categoría**: Verificar via API `GET /categories/{category_id}/attributes` → campo `max_title_length`. Varía por categoría; algunas tienen 60 caracteres, otras más.
-- **Edición del título**: El título no puede editarse una vez que el ítem tiene ventas (`sold_quantity > 0`). Antes de la primera venta, sí es editable.
-- **Variantes**: Para colores, tallas u otras variantes, usar el sistema de variaciones de ML (`variations`) en lugar de crear listados separados.
-- **Global Selling**: En el programa de venta internacional de ML, los títulos deben estar en **inglés**.
-- **Validaciones**: ML devuelve dos tipos — `warning` (informativo, no bloquea) y `error` (bloquea publicación). Corregir todos los `error` antes de publicar.
-- **Posicionamiento**: La reputación del vendedor es el factor #1 de ranking en ML; dentro del listado, el título es el elemento de mayor impacto.
-
-### Google UCP
-
-- **Campo del feed**: El campo `title` del feed de Merchant Center es la fuente del título UCP. Debe coincidir con el `<title>` o H1 visible de la página de producto.
-- **Supplemental feed**: Si se usa `supplemental_feed`, ese título sobreescribe al principal. Validar ambos.
-- **Variantes**: Con `item_group_id`, cada variante necesita su propio título con los atributos que la diferencian (color, talla, capacidad, etc.).
-- **Idioma**: Los títulos se evalúan por país/idioma del feed. Validar siempre en el idioma correcto del target market.
-- **Checkout agéntico**: El título debe ser suficientemente descriptivo para que un agente (Gemini) confirme la compra sin ver la imagen del producto.
+- **Compatibilidades obligatorias**: ML pausa automáticamente ítems con tag `incomplete_compatibilities`. Endpoint: `POST /items/{item_id}/compatibilities`. Categorías afectadas: MLA1747, MLM1748, MLB22693, MLU1748, MLC1748, MCO87919.
+- **Límite de caracteres**: Verificar por categoría via `GET /categories/{category_id}/attributes` → `max_title_length`. Estándar en autopartes ML Argentina: **60 caracteres**.
+- **Número OEM**: Va en descripción y atributos técnicos del ítem. Nunca en el título.
+- **Ítems con múltiples posiciones**: No crear listados separados por lado — usar `variations` con posición como atributo de variante cuando el ítem puede ser izquierdo o derecho.
+- **Edición post-venta**: El título no se puede editar una vez que `sold_quantity > 0`. Validar títulos antes del primer push al feed.
+- **Atributo POSITION del ítem**: Debe coincidir con la posición mencionada en el título. Completarlo siempre que el título incluya posición.
 
 ---
 
 ## Ejemplos de referencia
 
-### Mercado Libre
-
 ```
-❌  NUEVA Camisa OFERTA 30% OFF azul M envío gratis — calidad premium
-    Problemas: mayúsculas, texto promocional, info de envío, condición en título
+❌  Pastilla Freno Delantera Ford Ranger 3.2 TDi 2012-2022 Brembo  (64 chars)
+    Problemas: vehículo en título [#5 IMPORTANTE], supera 60 chars [#3 CRÍTICO]
+    El vehículo debe ir en el sistema de Compatibilidades de ML.
 
-✅  Lacoste Camisa Polo de Algodón Hombre Azul Marino Talla M
-    ✓ Marca + tipo + material + género + color + talla
+✅  Pastilla Freno Brembo Delantera  (31 chars · 13/13)
+    Compatibilidades ML: Ford Ranger 3.2 TDi 2012-2022
 
-❌  Zapatilla buena correr
-    Problemas: sin marca, sin modelo, sin specs diferenciadores
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✅  Adidas Ultraboost 22 Zapatilla Running Mujer Blanca Talla 38
-    ✓ Marca + modelo + tipo + género + color + talla
+❌  FILTRO DE ACEITE MAHLE ORIGINAL NUEVO Toyota Hilux 2022  (55 chars)
+    Problemas: ALL CAPS [#8 RECHAZO], condición en título [#11 RECHAZO],
+               vehículo en título [#5 IMPORTANTE]
 
-❌  Samsung Galaxy S24 Celular NUEVO 256GB igual al iPhone precio especial
-    Problemas: condición en título, comparación de marca, texto promocional
+✅  Filtro Aceite Mahle  (20 chars · 13/13)
+    Compatibilidades ML: Toyota Hilux 2015-2023
 
-✅  Samsung Galaxy S24 Celular 256GB 8GB RAM Violeta
-    ✓ Marca + modelo + tipo + almacenamiento + RAM + color
-```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### Google UCP
+❌  Amortiguador Monroe Delantero Izquierdo camioneta diesel envio gratis  (70 chars)
+    Problemas: supera 60 chars [#3 CRÍTICO], info de envío [#12 RECHAZO],
+               descriptor genérico innecesario ("camioneta diesel")
 
-```
-❌  MEJOR Camiseta OFERTA ESPECIAL 30% OFF azul ★★★★★ calidad premium envío gratis
-    Problemas: mayúsculas, texto promocional, símbolos, sin marca, sin talla
+✅  Amortiguador Delantero Izquierdo Monroe  (41 chars · 13/13)
+    Compatibilidades ML: [cargadas en sistema ML]
 
-✅  Nike Dri-FIT Camiseta de running para hombre, color azul marino, talla M
-    ✓ Marca + modelo + tipo + género + color + talla — 73 caracteres
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-❌  Auriculares inalámbricos INCREÍBLES precio especial
-    Problemas: mayúsculas, texto promocional, sin marca, sin modelo
+❌  Kit Embrague completo similar a Valeo calidad premium 3 cuotas sin interes
+    Problemas: comparación de marca [#13 SUSPENSIÓN], texto promocional [#12 RECHAZO],
+               cuotas en título [#10 RECHAZO]
 
-✅  Sony WH-1000XM5 Auriculares inalámbricos con cancelación de ruido activa, color negro
-    ✓ Marca + modelo + tipo + specs — 86 caracteres — apto UCP / AI Mode
+✅  Kit Embrague Valeo  (20 chars · 13/13)
+    Compatibilidades ML: [cargadas en sistema ML]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌  04466-0K060 Pastillas Freno Delanteras Toyota Hilux  (51 chars)
+    Problemas: OEM en título [#7 IMPORTANTE], vehículo en título [#5 IMPORTANTE]
+    El OEM va en ficha técnica. El vehículo va en Compatibilidades.
+
+✅  Pastilla Freno Delantera Toyota  (33 chars · 12/13)
+    Nota: si la marca del repuesto no es conocida, esta versión es válida.
+    OEM 04466-0K060 → ficha técnica del ítem.
+    Compatibilidades ML: Toyota Hilux 2015-2023 / Fortuner 2016-2023
 ```

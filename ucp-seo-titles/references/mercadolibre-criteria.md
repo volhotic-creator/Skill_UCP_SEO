@@ -1,151 +1,114 @@
-# Mercado Libre — Criterios para Títulos SEO de Productos
+# Mercado Libre — Criterios Generales para Títulos SEO
 
-Fuentes: https://global-selling.mercadolibre.com · https://developers.mercadolibre.com
+Fuentes:
+- https://vendedores.mercadolibre.com.ar/nota/como-hacer-un-buen-titulo-para-tu-publicacion
+- https://developers.mercadolibre.com.ar/es_ar/categorias-y-atributos
+- https://global-selling.mercadolibre.com/learning-center/news/how-to-create-a-good-title-for-your-listing
+
+> **Para autopartes**: ver también `/references/autopartes-structures.md` para criterios y estructuras específicas de la categoría, incluido el sistema de Compatibilidades.
 
 ---
 
-## ¿Por qué importa el título en Mercado Libre?
+## Estructura del título
 
-El título es el elemento de mayor impacto en el posicionamiento de un listado dentro de la búsqueda de ML. MercadoLibre procesa más de 4.000 búsquedas por segundo y el 70% de los compradores nunca pasa de la primera página de resultados. Un título mal construido reduce la visibilidad del listado incluso si los demás atributos son correctos.
+### Formato base
 
----
-
-## Criterios de construcción del título
-
-### 1. Estructura recomendada
-
-Formato base por categoría:
-
-| Categoría | Estructura ideal |
-|-----------|-----------------|
-| Electrónica / Tecnología | Marca + Modelo + Tipo de producto + Specs clave |
-| Smartphones | Marca + Modelo + Almacenamiento + RAM + Color |
-| Ropa | Marca + Tipo + Género + Color + Talla/Material |
-| Calzado | Marca + Modelo + Tipo + Género + Talla |
-| Alimentos | Marca + Nombre + Variante/Sabor + Peso/Cantidad |
-| Hogar | Marca + Material + Tipo + Dimensiones |
-| Autopartes | Marca + Tipo + Compatibilidad (marca vehículo + modelo + año) |
-| Genérico | Marca + Modelo + Tipo + Atributos diferenciadores |
-
-### 2. Longitud del título
-
-- **No existe un mínimo global** establecido por ML
-- El **máximo varía por categoría** y se define en el atributo `max_title_length`
-- Cómo verificar el límite de una categoría específica:
-  ```
-  GET /categories/{category_id}/attributes
-  → buscar el campo max_title_length
-  ```
-- **Buena práctica**: usar la mayor parte del límite disponible para incluir todos los atributos relevantes
-- Títulos demasiado cortos tienen menor visibilidad en los resultados de búsqueda
-
-### 3. Atributos requeridos vs. opcionales
-
-**Obligatorios en la mayoría de las categorías:**
-- `brand` — Marca del producto
-- `model` — Modelo (cuando el campo está marcado como `catalog_required` para esa categoría)
-
-**Recomendados para aumentar visibilidad:**
-- Color (solo si el producto no tiene variantes de color)
-- Talla / capacidad / peso
-- Material
-- Especificaciones técnicas relevantes (RAM, almacenamiento, resolución, etc.)
-- Género (ropa, calzado)
-
-**Verificar obligatoriedad por categoría:**
 ```
-GET /categories/{category_id}/attributes
-→ atributos con "catalog_required": true son obligatorios
+[Tipo de producto]  [Marca del producto]  [Posición?]  [Atributos diferenciadores]
 ```
 
-### 4. Regla especial — Variantes y color
+Las primeras palabras del título tienen mayor peso en el ranking de búsqueda de ML. El tipo de producto (qué es el ítem) debe ir primero.
 
-Cuando un producto existe en **múltiples colores**, ML utiliza el sistema de variaciones (`variations`):
-- **No incluir el color en el título** del listado principal
-- Registrar cada variante de color dentro del mismo listado usando el campo `variations`
-- Incluir el color en el título **solo cuando el producto existe en un único color**
+### Longitud
 
-Esto aplica también a otras variantes (tallas, capacidades, modelos) cuando se agrupan en un mismo listado.
-
----
-
-## Prohibiciones explícitas
-
-### Rechazadas por ML (bloquean la publicación)
-
-❌ **Texto en mayúsculas** — `MEJOR CAMISA AZUL` → debe ser `Mejor camisa azul`
-❌ **Símbolos y puntuación innecesaria** — `★`, `✓`, `!!!`, `>>>`, `---`
-❌ **Precio en el título** — `Camisa azul $5.000`
-❌ **Condiciones de pago** — `12 cuotas sin interés`, `3 MSI`
-❌ **Información de condición del producto** — `nuevo`, `usado`, `reacondicionado` (va en el campo `condition`)
-❌ **Información de envío** — `envío gratis`, `entrega en 24hs`, `full`
-❌ **Texto promocional** — `Oferta`, `30% OFF`, `Precio especial`, `Liquidación`
-
-### Que pueden derivar en suspensión de cuenta
-
-❌ **Comparaciones de marca** — `similar a`, `tipo`, `estilo`, `igual a`, `clase de` + nombre de marca
-❌ **Marcas no autorizadas** — usar marcas de competidores sin ser distribuidor autorizado
-❌ **Indicadores de falsificación** — `réplica`, `copia`, `imitación`, `fake`, `AAA`
-❌ **Copiar títulos o descripciones de otros vendedores** — violación de propiedad intelectual
+- No existe un mínimo global definido por ML
+- El **máximo varía por categoría** — verificar via API:
+  ```
+  GET /categories/{category_id}/attributes → max_title_length
+  ```
+- Categorías de autopartes ML Argentina: **60 caracteres**
+- Buena práctica: usar la mayor parte del límite disponible incluyendo los atributos más relevantes
 
 ---
 
-## Algoritmo de búsqueda de Mercado Libre
+## Prohibiciones — clasificadas por consecuencia
 
-### Factores de posicionamiento (por impacto)
+### Causan rechazo de la publicación
+
+❌ Texto en mayúsculas — `MEJOR PRODUCTO` → debe ser `Mejor producto`
+❌ Símbolos y puntuación decorativa — `★`, `✓`, `>>>`, `---`, `!!!`
+❌ Precio en el título — `Camisa azul $5.000`
+❌ Condiciones de pago — `12 cuotas sin interés`, `3 MSI`
+❌ Condición del producto — `nuevo`, `usado`, `reacondicionado` (va en el campo `condition`)
+❌ Información de envío — `envío gratis`, `entrega en 24hs`, `full`
+❌ Texto promocional — `Oferta`, `30% OFF`, `Precio especial`, `Liquidación`
+❌ Puntuación innecesaria — puntos, comas, guiones usados como decoración
+
+### Pueden derivar en suspensión de cuenta
+
+❌ Comparaciones de marca — `similar a [Marca]`, `tipo [Marca]`, `estilo [Marca]`, `igual a [Marca]`
+❌ Marcas de competidores sin ser distribuidor autorizado
+❌ Indicadores de falsificación — `réplica`, `copia`, `imitación`, `fake`, `AAA`
+❌ Copiar títulos o descripciones de otros vendedores
+
+---
+
+## Algoritmo de búsqueda de ML
+
+### Factores de posicionamiento (mayor a menor impacto)
 
 1. **Reputación del vendedor** — factor #1 general en ML
 2. **Calidad del título** — factor #1 dentro del listado
-3. **Completitud del listado** — fichas técnicas, descripción, imágenes
-4. **Rendimiento de conversión** — el algoritmo favorece listados que convierten
+3. **Completitud del listado** — ficha técnica, descripción, imágenes
+4. **Conversión** — el algoritmo favorece listados que convierten
 5. **Velocidad de ventas** — ítems con más ventas tienen ventaja progresiva
-6. **Satisfacción del comprador** — respuesta a consultas, calificaciones, reclamos
+6. **Satisfacción del comprador** — respuesta a consultas, calificaciones
 
-### Cómo el título afecta el ranking
+### Cómo el algoritmo procesa el título
 
-- Las palabras del título son el principal signal de relevancia para la búsqueda
-- Los compradores buscan con términos naturales: "auriculares inalámbricos sony" o "zapatillas running mujer adidas"
-- El título debe contener exactamente esas palabras en el orden más natural posible
-- No hay campo de "backend keywords" visible, pero la completitud de la ficha técnica complementa el título para búsquedas de cola larga
-
----
-
-## Diferencias por país y programa
-
-### Países donde opera ML
-
-Argentina, Bolivia, Brasil, Chile, Colombia, Costa Rica, Ecuador, El Salvador, Guatemala, Honduras, México, Nicaragua, Panamá, Paraguay, Perú, Uruguay, Venezuela.
-
-### Idioma del título
-
-- **Listados nacionales**: usar el idioma local del país objetivo (español o portugués para Brasil)
-- **Global Selling** (programa de venta internacional): título en **inglés**
-
-### Global Selling
-
-El programa Global Selling permite listar en México, Brasil, Chile, Colombia y Argentina desde una sola cuenta. Para estos listados:
-- El título debe estar en inglés
-- Los comportamientos de compra varían por país (México y Brasil difieren significativamente en estacionalidad y preferencias)
+- Cada palabra tiene peso de búsqueda; las primeras palabras pesan más
+- El sistema matchea la query del comprador contra las palabras del título
+- ML procesa más de 4.000 búsquedas por segundo; el 70% de compradores no pasa de la primera página
 
 ---
 
-## Edición del título
+## Reglas sobre variantes y color
 
-| Estado del listado | ¿Se puede editar el título? |
-|-------------------|-----------------------------|
-| Sin ventas (`sold_quantity = 0`) | ✅ Sí |
-| Con al menos una venta | ❌ No |
+### Variantes (colores, tallas, capacidades)
 
-Planificar y validar el título **antes de la primera venta**. Una vez que el ítem registra ventas, el título queda bloqueado.
+Cuando un producto existe en múltiples variantes (colores, tallas, etc.):
+- **No** crear un listado por variante
+- Usar el sistema de **variaciones** (`variations`) de ML dentro de un único listado
+- **No** incluir la variante en el título si hay múltiples opciones
+
+Incluir el atributo de variante en el título **solo cuando el producto existe en una única opción** (un solo color, una sola talla, etc.).
+
+### Categoría autopartes — variantes de vehículo
+
+En autopartes, la "variante" es el vehículo compatible. Usar el sistema de **Compatibilidades** de ML (no el sistema de variaciones) para asociar múltiples vehículos a un mismo repuesto. Ver `/references/autopartes-structures.md`.
 
 ---
 
-## Validaciones técnicas de ML
+## Políticas adicionales
 
-Antes de publicar, ML corre validaciones automáticas. Pueden devolver:
+### Edición del título
 
-| Tipo | Descripción | ¿Bloquea publicación? |
-|------|-------------|----------------------|
+| Estado del listado | ¿Editable? |
+|---|---|
+| `sold_quantity = 0` (sin ventas) | ✅ Sí |
+| `sold_quantity > 0` (con ventas) | ❌ No |
+
+Validar el título antes del primer push al feed. Una vez publicado con ventas, el título queda bloqueado.
+
+### Idioma
+
+- **Listados nacionales**: idioma local del país (español; portugués para Brasil)
+- **Global Selling**: inglés (programa de venta internacional de ML)
+
+### Validaciones técnicas de ML
+
+| Tipo | Descripción | Bloquea publicación |
+|------|-------------|:-------------------:|
 | `error` | Problema crítico que viola las reglas | ✅ Sí |
 | `warning` | Observación o recomendación | ❌ No |
 
@@ -153,64 +116,35 @@ Verificar validaciones via API antes de publicar en producción.
 
 ---
 
-## Calidad del listado (Listing Quality Score)
-
-ML asigna un **puntaje de calidad** a cada listado. Un puntaje más alto se correlaciona directamente con más visitas y ventas. Los factores que afectan el score:
-
-1. Completitud del título (atributos incluidos)
-2. Ficha técnica completa (todos los atributos de la categoría)
-3. Imágenes de calidad (fondo blanco, múltiples ángulos)
-4. Descripción detallada
-5. Preguntas respondidas
-
-El título tiene el **mayor peso individual** dentro del score de calidad del listado.
-
----
-
-## Checklist de validación rápida
+## Checklist de validación general ML
 
 ```
-[ ] ¿Tiene marca?
-[ ] ¿Tiene tipo de producto claro?
-[ ] ¿Tiene modelo o referencia (si aplica)?
+[ ] ¿El tipo de producto es la primera palabra del título?
+[ ] ¿Tiene marca del producto (si aplica)?
 [ ] ¿Longitud dentro del límite de la categoría?
 [ ] ¿Sin mayúsculas innecesarias?
-[ ] ¿Sin símbolos o puntuación decorativa?
-[ ] ¿Sin precio, condiciones de pago o info de envío?
-[ ] ¿Sin texto promocional?
-[ ] ¿Sin comparaciones de marca ("similar a", "tipo", "estilo")?
-[ ] ¿Sin indicar condición del producto (nuevo/usado)?
+[ ] ¿Sin símbolos ni puntuación decorativa?
+[ ] ¿Sin precio ni condiciones de pago?
+[ ] ¿Sin condición del producto (nuevo/usado)?
+[ ] ¿Sin texto de envío ni promocional?
+[ ] ¿Sin comparaciones de marca?
+[ ] ¿Las variantes están manejadas con el sistema correcto (variations / compatibilidades)?
 ```
 
 ---
 
-## Ejemplos
-
-### ❌ Títulos con problemas
+## Ejemplos generales
 
 ```
-NUEVA Camisa OFERTA 30% OFF azul M envío gratis — calidad premium
-→ Mayúsculas, texto promocional, condición, info de envío, sin marca
+❌  NUEVA Camisa OFERTA 30% OFF azul M envío gratis calidad premium
+    Problemas: mayúsculas, texto promocional, condición, info de envío, sin marca
 
-Zapatilla buena para correr
-→ Sin marca, sin modelo, sin atributos diferenciadores
+✅  Lacoste Camisa Polo Algodón Hombre Azul Marino Talla M
+    ✓ Tipo + marca + material + género + color + talla
 
-Samsung Galaxy S24 NUEVO igual al iPhone mejor precio especial
-→ Condición en título, comparación de marca, texto promocional
-```
+❌  Zapatilla buena para correr
+    Problemas: sin marca, sin modelo, sin atributos diferenciadores
 
-### ✅ Títulos optimizados para ML
-
-```
-Lacoste Camisa Polo de Algodón Hombre Azul Marino Talla M
-→ Marca + tipo + material + género + color + talla
-
-Adidas Ultraboost 22 Zapatilla Running Mujer Blanca Talla 38
-→ Marca + modelo + tipo + género + color + talla
-
-Samsung Galaxy S24 Celular 256GB 8GB RAM Violeta
-→ Marca + modelo + tipo + almacenamiento + RAM + color
-
-Sony WH-1000XM5 Auriculares Inalámbricos Cancelación de Ruido Negro
-→ Marca + modelo + tipo + specs + color
+✅  Adidas Ultraboost 22 Zapatilla Running Mujer Blanca Talla 38
+    ✓ Tipo + marca + modelo + género + color + talla
 ```
